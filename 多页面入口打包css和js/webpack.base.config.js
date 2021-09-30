@@ -4,19 +4,24 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 // const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;   改插件webpack5已经被移除掉了，取而代之optimization.splitChunks
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const devMode = process.env.NODE_ENV !== "production";
 
 module.exports = {
   entry: {
-    module1: "./js/button1.js",
-    module2: "./js/button2.js",
-    verdor: ["./js/common.js"],
+    module1: "./js/entry1.js",
+    module2: "./js/entry2.js",
+    // common: ["./js/common.js"],
+    // vendors: ['jQuery'],
   },
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "js/[name].[chunkhash:8].js",
     //[name]文件名，[chunkhash:8]的意思是每次输出在文件后随机生成一个8位数，让文件不一样
   },
+  // externals: {
+  //   jquery: 'jQuery',
+  // },
   module: {
     rules: [
       {
@@ -41,11 +46,12 @@ module.exports = {
     ],
   },
   plugins: [
+    new BundleAnalyzerPlugin(),
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
       title: "module1",
       filename: "module1.html",
-      chunks: ["module1"],
+      chunks: ["module1","vendors"],
       template: "./page/module1/module1.html",
     }),
     new HtmlWebpackPlugin({
@@ -63,20 +69,20 @@ module.exports = {
   optimization: {
     splitChunks: {
       cacheGroups: {
+        // 打包第三方库的文件
+        vendors: {
+          name: "vendors",
+          test: /[\\/]node_modules[\\/](jquery)[\\/]/,
+          chunks: "all",
+          priority: 10,
+          minChunks: 1, // 同时引用了 1 次才打包
+        },
         // 打包业务中公共代码
         common: {
           name: "common",
           chunks: "initial",
           minSize: 1,
           priority: 0,
-          minChunks: 2, // 同时引用了 2 次才打包
-        },
-        // 打包第三方库的文件
-        vendor: {
-          name: "vendor",
-          test: /[\/]node_modules[\/]/,
-          chunks: "initial",
-          priority: 10,
           minChunks: 2, // 同时引用了 2 次才打包
         },
       },
